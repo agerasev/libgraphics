@@ -1,70 +1,68 @@
+#pragma once
+
 /**
  * Library for simple graphics
- *
- * You need to have SDL2 and GLEW libraries
- * Link -lSDL2 -lGLEW -lGL
  */
 
-int createWindow(int width, int height);
-int destroyWindow();
+#define BLACK    0xff000000
+#define WHITE    0xffffffff
+#define RED      0xff0000ff
+#define GREEN    0xff00ff00
+#define BLUE     0xffff0000
+#define YELLOW   0xff00ffff
+#define CYAN     0xffffff00
+#define MAGENTA  0xffff00ff
+
+#define ALPHA(c) (((int)(255.0f*c)<<24)|0x00ffffff)
+
+/* Initializes graphics subsystem */
+int initGraphics(int width, int height);
+
+/* Safely disposes graphics subsystem */
+int disposeGraphics();
+
+/* Performs resizing of window */
+// void resizeGraphics(int width, int height);
+
+/* Performs resizing of window */
+// void renderGraphics();
+
+/* Sets function invokes on resize */
+// void setResizeFunc(void (*resize)(int,int,void*), void *data);
+
+/* Sets function invokes when rendering */
+// void setDisplayFunc(void (*display)(void*), void *data);
+
+/* Transform */
+void translate(const float *vector);
+void transform(const float *matrix);
+
+/* Color */
+void setColor(unsigned color);
+void setFloatColor(const float *color);
+
+/* Draw */
+void clear();
+void fill();
+void quad();
 
 /* Implementation */
-#include<SDL2/SDL.h>
-#include<GL/glew.h>
 
-#include<stdio.h>
+#if defined(__unix__) || defined(_WIN32)
+#include"desktop_headers.h"
+#endif
 
-struct
-{
-		int width, height;
-		SDL_Window *window;
-		SDL_GLContext context;
-}__global_context;
+#if defined(__ANDROID__)
+#include"android_headers.h"
+#endif
 
-int createWindow(int width, int height)
-{
-	__global_context.width = width;
-	__global_context.height = height;
 
-	__global_context.window =
-		SDL_CreateWindow(
-			"Graphics application",
-			SDL_WINDOWPOS_CENTERED,
-			SDL_WINDOWPOS_CENTERED,
-			width,
-			height,
-			SDL_WINDOW_OPENGL
-		);
+#include"common.h"
 
-	__global_context.context =
-		SDL_GL_CreateContext(__global_context.window);
+#if defined(__unix__) || defined(_WIN32)
+#include"desktop.h"
+#endif
 
-	SDL_GL_SetAttribute(SDL_GL_DOUBLEBUFFER,1);
-	SDL_GL_SetAttribute(SDL_GL_RED_SIZE,5);
-	SDL_GL_SetAttribute(SDL_GL_GREEN_SIZE,6);
-	SDL_GL_SetAttribute(SDL_GL_BLUE_SIZE,5);
-	SDL_GL_SetSwapInterval(1);
-
-	GLenum glew_status = glewInit();
-	if(GLEW_OK != glew_status)
-	{
-		printf("%s\n",glewGetErrorString(glew_status));
-		return -1;
-	}
-	if(!GLEW_VERSION_2_0)
-	{
-		printf("%s\n","No support for OpenGL 2.0 found");
-		return -2;
-	}
-
-	glClearColor(0, 0, 0, 0);
-	glViewport(0,0,width,width);
-}
-
-int destroyWindow()
-{
-	SDL_GL_DeleteContext(__global_context.context);
-	SDL_DestroyWindow(__global_context.window);
-	return 0;
-
-}
+#if defined(__ANDROID__)
+#include"android.h"
+#endif
