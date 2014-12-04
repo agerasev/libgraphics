@@ -7,10 +7,20 @@
  * Link -lSDL2 -lGLEW -lGL when building
  */
 
+struct __CallbackSet
+{
+	void (*display)(void *);
+	void *display_data;
+	
+	void (*resize)(int,int,void *);
+	void *resize_data;
+};
+
 struct __Context
 {
 	SDL_Window *window;
 	SDL_GLContext context;
+	struct __CallbackSet callbacks;
 }
 __platform__context;
 
@@ -40,12 +50,20 @@ void __printProgramLinkingErrors(GLuint id)
 	}
 }
 
+void __checkError() 
+{
+	GLint i;
+	for (i = glGetError(); i; i = glGetError())
+	{
+		printf("glError 0x%x\n", i);
+	}
+}
 #endif
 
-int initGraphics(int width, int height)
+int initGraphics()
 {
-	__context.width = width;
-	__context.height = height;
+	__context.width = 800;
+	__context.height = 600;
 
 	__platform__context.window =
 		SDL_CreateWindow(
@@ -82,16 +100,13 @@ int initGraphics(int width, int height)
 	glBlendFunc(GL_SRC_ALPHA,GL_ONE_MINUS_SRC_ALPHA);
 
 	glClearColor(0,0,0,0);
-	glViewport(0,0,width,height);
 	glClear(GL_COLOR_BUFFER_BIT);
 
 	__loadShaders(&(__context.shaders));
 	__loadBuffers(&(__context.buffers));
-
-	__context.projection_matrix[0] = (float)height/width;
-	__context.projection_matrix[1] = 0.0f;
-	__context.projection_matrix[2] = 0.0f;
-	__context.projection_matrix[3] = 1.0f;
+	
+	__platform__context.callbacks.display = NULL;
+	__platform__context.callbacks.resize = NULL;
 
 	return 0;
 }
@@ -106,9 +121,48 @@ int disposeGraphics()
 	return 0;
 }
 
+void resizeGraphics(int width, int height)
+{
+	__context.width = width;
+	__context.height = height;
+	SDL_SetWindowSize(__platform__context.window,width,height);
+	glViewport(0,0,width,height);
+	
+	__context.projection_matrix[0] = (float)height/width;
+	__context.projection_matrix[1] = 0.0f;
+	__context.projection_matrix[2] = 0.0f;
+	__context.projection_matrix[3] = 1.0f;
+	
+	if(__platform__context.callbacks.resize)
+	{
+		__platform__context.callbacks.resize(width,height,__platform__context.callbacks.resize_data);
+	}
+}
+
 void __flip()
 {
 	SDL_GL_SwapWindow(__platform__context.window);
+}
+
+void renderGraphics()
+{
+	if(__platform__context.callbacks.display)
+	{
+		__platform__context.callbacks.display(__platform__context.callbacks.display_data);
+	}
+	__flip();
+}
+
+void setResizeFunc(void (*resize)(int,int,void*), void *data)
+{
+	__platform__context.callbacks.resize = resize;
+	__platform__context.callbacks.resize_data = data;
+}
+
+void setDisplayFunc(void (*display)(void*), void *data)
+{
+	__platform__context.callbacks.display = display;
+	__platform__context.callbacks.display_data = data;
 }
 
 int handleEvents()
@@ -125,11 +179,3 @@ int handleEvents()
 	return 0;
 }
 
-void startLoop(void(*draw)(void*), void *data)
-{
-	while(!handleEvents())
-	{
-		draw(data);
-		__flip();
-	}
-}

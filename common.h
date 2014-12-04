@@ -7,6 +7,7 @@
 #ifdef DEBUG
 void __printShaderCompilationErrors(GLuint id);
 void __printProgramLinkingErrors(GLuint id);
+void __checkError();
 #endif
 
 /* Constants */
@@ -36,7 +37,9 @@ const GLchar *__vertex_shader_source =
 		"uniform mat2 uProjection;\n"
 		"uniform mat2 uModelview;\n"
 		"attribute vec2 aCoord;\n"
+    "varying vec2 vPosition;\n"
 		"void main(void) {\n"
+    "\tvPosition = aCoord;\n"
 		"\tgl_Position = vec4(uProjection*uModelview*(aCoord + uTranslation),0.0,1.0);\n"
 		"}\n";
 
@@ -47,29 +50,24 @@ struct __FragmentFillShaderUniforms
 
 const GLchar *__fragment_fill_shader_source =
 		"uniform vec4 uColor;\n"
+    "varying vec2 vPosition;\n"
 		"void main(void) {\n"
 		"\tgl_FragColor = uColor;\n"
 		"}\n";
 
-/*
-
 struct __FragmentCircleShaderUniforms
 {
-	GLint fill_color;
-	GLint stroke_color;
+	GLint color;
 	GLint center;
-	GLint size;
+	GLint radius;
 };
 
 const GLchar *__fragment_circle_shader_source =
-		"uniform vec4 fill_color;\n"
-		"uniform vec4 stroke_color;\n"
-		"uniform vec2 center;\n"
-		"uniform mat2 size;\n"
+		"uniform vec4 uColor;\n"
+    "varying vec2 vPosition;\n"
 		"void main(void) {\n"
-		"\tgl_FragColor = fill_color;\n"
+		"\tgl_FragColor = uColor*float(length(vPosition) <= 1.0);\n"
 		"}\n";
-*/
 
 struct __FillProgram
 {
@@ -79,7 +77,6 @@ struct __FillProgram
 	struct __FragmentFillShaderUniforms fs_uniforms;
 };
 
-/*
 struct __CircleProgram
 {
 	GLuint id;
@@ -87,13 +84,14 @@ struct __CircleProgram
 	struct __VertexShaderAttribs vs_attribs;
 	struct __FragmentCircleShaderUniforms fs_uniforms;
 };
-*/
 
 struct __ProgramSet
 {
 	GLuint vert;
 	GLuint frag_fill;
+	GLuint frag_circle;
 	struct __FillProgram prog_fill;
+	struct __CircleProgram prog_circle;
 };
 
 struct __CommonContext
@@ -110,57 +108,96 @@ struct __CommonContext
 }
 __context;
 
+GLint __pullUniform(GLuint prog, const char *name)
+{
+	GLint unif;
+	unif = glGetUniformLocation(prog, name);
+#ifdef DEBUG
+	if(unif == -1)
+	{
+		printf("Could not bind uniform '%s'\n",name);
+	}
+#endif
+	return unif;
+}
+
+GLint __pullAttribute(GLuint prog, const char *name)
+{
+	GLint attr;
+	attr = glGetAttribLocation(prog, name);
+#ifdef DEBUG
+	if(attr == -1)
+	{
+		printf("Could not bind attrib '%s'\n",name);
+	}
+#endif
+	return attr;
+}
+
 void __loadShaders(struct __ProgramSet *set)
 {
 	set->vert = glCreateShader(GL_VERTEX_SHADER);
 	set->frag_fill = glCreateShader(GL_FRAGMENT_SHADER);
+	set->frag_circle = glCreateShader(GL_FRAGMENT_SHADER);
 
 	glShaderSource(set->vert, 1, &(__vertex_shader_source), NULL);
 	glShaderSource(set->frag_fill, 1, &(__fragment_fill_shader_source), NULL);
+	glShaderSource(set->frag_circle, 1, &(__fragment_circle_shader_source), NULL);
 
 	glCompileShader(set->vert);
 	glCompileShader(set->frag_fill);
+	glCompileShader(set->frag_circle);
 
 #ifdef DEBUG
 	__printShaderCompilationErrors(set->vert);
 	__printShaderCompilationErrors(set->frag_fill);
+	__printShaderCompilationErrors(set->frag_circle);
 #endif
 
 	set->prog_fill.id = glCreateProgram();
+	set->prog_circle.id = glCreateProgram();
 
 	glAttachShader(set->prog_fill.id, set->vert);
 	glAttachShader(set->prog_fill.id, set->frag_fill);
+	
+	glAttachShader(set->prog_circle.id, set->vert);
+	glAttachShader(set->prog_circle.id, set->frag_circle);
 
 	glLinkProgram(set->prog_fill.id);
+	glLinkProgram(set->prog_circle.id);
 
 #ifdef DEBUG
 	__printProgramLinkingErrors(set->prog_fill.id);
+	__printProgramLinkingErrors(set->prog_circle.id);
 #endif
 
-	set->prog_fill.vs_uniforms.trans = glGetUniformLocation(set->prog_fill.id, "uTranslation");
-	set->prog_fill.vs_uniforms.proj = glGetUniformLocation(set->prog_fill.id, "uProjection");
-	set->prog_fill.vs_uniforms.view = glGetUniformLocation(set->prog_fill.id, "uModelview");
-	set->prog_fill.vs_attribs.coord = glGetAttribLocation(set->prog_fill.id, "aCoord");
-	set->prog_fill.fs_uniforms.color = glGetUniformLocation(set->prog_fill.id, "uColor");
+	set->prog_fill.vs_uniforms.trans = __pullUniform(set->prog_fill.id, "uTranslation");
+	set->prog_fill.vs_uniforms.proj = __pullUniform(set->prog_fill.id, "uProjection");
+	set->prog_fill.vs_uniforms.view = __pullUniform(set->prog_fill.id, "uModelview");
+	set->prog_fill.vs_attribs.coord = __pullAttribute(set->prog_fill.id, "aCoord");
+	set->prog_fill.fs_uniforms.color = __pullUniform(set->prog_fill.id, "uColor");
 	
-#ifdef DEBUG
-	if(set->prog_fill.vs_uniforms.trans == -1) { printf("Could not bind uniform '%s'\n","uTranslation"); }
-	if(set->prog_fill.vs_uniforms.proj == -1) { printf("Could not bind uniform '%s'\n","uProjection"); }
-	if(set->prog_fill.vs_uniforms.view == -1) { printf("Could not bind uniform '%s'\n","uModelview"); }
-	if(set->prog_fill.vs_attribs.coord == -1) { printf("Could not bind attribute '%s'\n","aCoord"); }
-	if(set->prog_fill.fs_uniforms.color == -1) { printf("Could not bind uniform '%s'\n","uColor"); }
-#endif
+	set->prog_circle.vs_uniforms.trans = __pullUniform(set->prog_circle.id, "uTranslation");
+	set->prog_circle.vs_uniforms.proj = __pullUniform(set->prog_circle.id, "uProjection");
+	set->prog_circle.vs_uniforms.view = __pullUniform(set->prog_circle.id, "uModelview");
+	set->prog_circle.vs_attribs.coord = __pullAttribute(set->prog_circle.id, "aCoord");
+	set->prog_circle.fs_uniforms.color = __pullUniform(set->prog_circle.id, "uColor");
 }
 
 void __deleteShaders(struct __ProgramSet *set)
 {
 	glDetachShader(set->prog_fill.id, set->vert);
 	glDetachShader(set->prog_fill.id, set->frag_fill);
+	
+	glDetachShader(set->prog_circle.id, set->vert);
+	glDetachShader(set->prog_circle.id, set->frag_circle);
 
 	glDeleteProgram(set->prog_fill.id);
+	glDeleteProgram(set->prog_circle.id);
 
 	glDeleteShader(set->vert);
 	glDeleteShader(set->frag_fill);
+	glDeleteShader(set->frag_circle);
 }
 
 void __loadBuffers(struct __Buffers *buffers)
@@ -226,24 +263,29 @@ void clear()
 	glClear(GL_COLOR_BUFFER_BIT);
 }
 
-void __setModelviewUniforms(const float *v, const float *m, const float *p)
+void __setModelviewUniforms(struct __VertexShaderUniforms *unifs, const float *v, const float *m, const float *p)
 {
-	glUniform2fv(__context.shaders.prog_fill.vs_uniforms.trans, 1, v);
-	glUniformMatrix2fv(__context.shaders.prog_fill.vs_uniforms.proj, 1, GL_FALSE, p);
-	glUniformMatrix2fv(__context.shaders.prog_fill.vs_uniforms.view, 1, GL_FALSE, m);
+	glUniform2fv(unifs->trans, 1, v);
+	glUniformMatrix2fv(unifs->proj, 1, GL_FALSE, p);
+	glUniformMatrix2fv(unifs->view, 1, GL_FALSE, m);
 }
 
-void __setColorUniform(const float *c)
+void __setFillColorUniform(const float *c)
 {
 	glUniform4fv(__context.shaders.prog_fill.fs_uniforms.color, 1, c);
+}
+
+void __setCircleColorUniform(const float *c)
+{
+	glUniform4fv(__context.shaders.prog_circle.fs_uniforms.color, 1, c);
 }
 
 void __useFillProgram(const float *vec, const float *mv, const float *proj, const float *col)
 {
 	glUseProgram(__context.shaders.prog_fill.id);
 	{
-		__setModelviewUniforms(vec,mv,proj);
-		__setColorUniform(col);
+		__setModelviewUniforms(&__context.shaders.prog_fill.vs_uniforms,vec,mv,proj);
+		__setFillColorUniform(col);
 		
 		glEnableVertexAttribArray(__context.shaders.prog_fill.vs_attribs.coord);
 		{
@@ -257,6 +299,25 @@ void __useFillProgram(const float *vec, const float *mv, const float *proj, cons
 	glUseProgram(0);
 }
 
+void __useCircleProgram(const float *vec, const float *mv, const float *proj, const float *col)
+{
+	glUseProgram(__context.shaders.prog_circle.id);
+	{
+		__setModelviewUniforms(&__context.shaders.prog_circle.vs_uniforms,vec,mv,proj);
+		__setCircleColorUniform(col);
+		
+		glEnableVertexAttribArray(__context.shaders.prog_circle.vs_attribs.coord);
+		{
+			glBindBuffer(GL_ARRAY_BUFFER, __context.buffers.quad_buffer);
+			glVertexAttribPointer(__context.shaders.prog_circle.vs_attribs.coord, 2, GL_FLOAT, GL_FALSE, 0, NULL);
+			glBindBuffer(GL_ARRAY_BUFFER, 0);
+			glDrawArrays(GL_QUADS,0,4);
+		}
+		glDisableVertexAttribArray(__context.shaders.prog_circle.vs_attribs.coord);
+	}
+	glUseProgram(0);
+}
+
 void fill()
 {
 	__useFillProgram(__NULLVEC,__UNIMAT,__UNIMAT,__context.color);
@@ -265,4 +326,9 @@ void fill()
 void quad()
 {
 	__useFillProgram(__context.translation,__context.modelview_matrix,__context.projection_matrix,__context.color);
+}
+
+void circle()
+{
+	__useCircleProgram(__context.translation,__context.modelview_matrix,__context.projection_matrix,__context.color);
 }

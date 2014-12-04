@@ -16,22 +16,26 @@
 #define ALPHA(c) (((int)(255.0f*c)<<24)|0x00ffffff)
 
 /* Initializes graphics subsystem */
-int initGraphics(int width, int height);
+int initGraphics();
 
 /* Safely disposes graphics subsystem */
 int disposeGraphics();
 
 /* Performs resizing of window */
-// void resizeGraphics(int width, int height);
+void resizeGraphics(int width, int height);
 
-/* Performs resizing of window */
-// void renderGraphics();
+/* Performs rendering */
+void renderGraphics();
 
 /* Sets function invokes on resize */
-// void setResizeFunc(void (*resize)(int,int,void*), void *data);
+void setResizeFunc(void (*resize)(int,int,void*), void *data);
 
 /* Sets function invokes when rendering */
-// void setDisplayFunc(void (*display)(void*), void *data);
+void setDisplayFunc(void (*display)(void*), void *data);
+
+/* Polls events and calls user-set handlers
+ * returns non-zero if application need to be exited */
+int handleEvents();
 
 /* Transform */
 void translate(const float *vector);
@@ -55,7 +59,6 @@ void quad();
 #if defined(__ANDROID__)
 #include"android_headers.h"
 #endif
-
 
 #include"common.h"
 
