@@ -15,6 +15,10 @@
 
 #define ALPHA(c) (((int)(255.0f*c)<<24)|0x00ffffff)
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /* Initializes graphics subsystem */
 int initGraphics();
 
@@ -24,19 +28,6 @@ int disposeGraphics();
 /* Performs resizing of window */
 void resizeGraphics(int width, int height);
 
-/* Performs rendering */
-void renderGraphics();
-
-/* Sets function invokes on resize */
-void setResizeFunc(void (*resize)(int,int,void*), void *data);
-
-/* Sets function invokes when rendering */
-void setDisplayFunc(void (*display)(void*), void *data);
-
-/* Polls events and calls user-set handlers
- * returns non-zero if application need to be exited */
-int handleEvents();
-
 /* Transform */
 void translate(const float *vector);
 void transform(const float *matrix);
@@ -45,27 +36,15 @@ void transform(const float *matrix);
 void setColor(unsigned color);
 void setFloatColor(const float *color);
 
-/* Draw */
+/* Fill */
 void clear();
 void fill();
+
+/* Geometry */
 void quad();
+void circle();
 
-/* Implementation */
-
-#if defined(__unix__) || defined(_WIN32)
-#include"desktop_headers.h"
+#ifdef __cplusplus
+}
 #endif
 
-#if defined(__ANDROID__)
-#include"android_headers.h"
-#endif
-
-#include"common.h"
-
-#if defined(__unix__) || defined(_WIN32)
-#include"desktop.h"
-#endif
-
-#if defined(__ANDROID__)
-#include"android.h"
-#endif

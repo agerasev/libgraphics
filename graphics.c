@@ -1,13 +1,56 @@
-#pragma once
-
-/**
- * Platform-independent part of graphics library
- */
+#ifdef __ANDROID__
+#include <GLES2/gl2.h>
+#else
+#include <GL/glew.h>
+#endif
 
 #ifdef DEBUG
-void __printShaderCompilationErrors(GLuint id);
-void __printProgramLinkingErrors(GLuint id);
-void __checkError();
+
+#ifdef __ANDROID__
+#include <android/log.h>
+#define printInfo(...) ((void)__android_log_print(ANDROID_LOG_INFO, "mynativeapp", __VA_ARGS__))
+#define printWarn(...) ((void)__android_log_print(ANDROID_LOG_WARN, "mynativeapp", __VA_ARGS__))
+#else
+#include <stdio.h>
+#define printInfo(...) (fprintf(stdout,__VA_ARGS__))
+#define printWarn(...) (fprintf(stderr,__VA_ARGS__))
+#endif
+
+#include <stdlib.h>
+
+void __printShaderCompilationErrors(GLuint id)
+{
+	int   infologLen   = 0;
+	int   charsWritten = 0;
+	char *infoLog;
+	glGetShaderiv(id, GL_INFO_LOG_LENGTH, &infologLen);
+	if(infologLen > 1)
+	{
+		infoLog = malloc(sizeof(char)*infologLen);
+		glGetShaderInfoLog(id, infologLen, &charsWritten, infoLog);
+		printInfo("%s\n",infoLog);
+		free(infoLog);
+	}
+}
+
+void __printProgramLinkingErrors(GLuint id)
+{
+	int link_ok;
+	glGetProgramiv(id, GL_LINK_STATUS, &link_ok);
+	if(!link_ok) {
+		printInfo("Linking error\n");
+	}
+}
+
+void __checkError() 
+{
+	GLint i;
+	for (i = glGetError(); i; i = glGetError())
+	{
+		printInfo("glError 0x%x\n", i);
+	}
+}
+
 #endif
 
 /* Constants */
@@ -32,7 +75,10 @@ struct __VertexShaderAttribs
 	GLint coord;
 };
 
-const GLchar *__vertex_shader_source =
+static const GLchar *__vertex_shader_source =
+#ifdef __ANDROID__
+		"precision mediump float;\n"
+#endif
 		"uniform vec2 uTranslation;\n"
 		"uniform mat2 uProjection;\n"
 		"uniform mat2 uModelview;\n"
@@ -40,7 +86,7 @@ const GLchar *__vertex_shader_source =
     "varying vec2 vPosition;\n"
 		"void main(void) {\n"
     "\tvPosition = aCoord;\n"
-		"\tgl_Position = vec4(uProjection*uModelview*(aCoord + uTranslation),0.0,1.0);\n"
+		"\tgl_Position = vec4(uProjection*(uModelview*aCoord + uTranslation),0.0,1.0);\n"
 		"}\n";
 
 struct __FragmentFillShaderUniforms
@@ -48,7 +94,10 @@ struct __FragmentFillShaderUniforms
 	GLint color;
 };
 
-const GLchar *__fragment_fill_shader_source =
+static const GLchar *__fragment_fill_shader_source =
+#ifdef __ANDROID__
+		"precision mediump float;\n"
+#endif
 		"uniform vec4 uColor;\n"
     "varying vec2 vPosition;\n"
 		"void main(void) {\n"
@@ -62,11 +111,19 @@ struct __FragmentCircleShaderUniforms
 	GLint radius;
 };
 
-const GLchar *__fragment_circle_shader_source =
+static const GLchar *__fragment_circle_shader_source =
+#ifdef __ANDROID__
+		"precision mediump float;\n"
+#endif
 		"uniform vec4 uColor;\n"
     "varying vec2 vPosition;\n"
+    "uniform mat2 uModelview;\n"
 		"void main(void) {\n"
+#ifdef SMOOTH_CIRCLE
+		"\tgl_FragColor = uColor*((1.0 - length(vPosition))*uModelview[0][0]);\n"
+#else
 		"\tgl_FragColor = uColor*float(length(vPosition) <= 1.0);\n"
+#endif
 		"}\n";
 
 struct __FillProgram
@@ -94,7 +151,7 @@ struct __ProgramSet
 	struct __CircleProgram prog_circle;
 };
 
-struct __CommonContext
+struct __Context
 {
 	int width, height;
 	struct __ProgramSet shaders;
@@ -105,36 +162,36 @@ struct __CommonContext
 	float modelview_matrix[4];
 	float translation[2];
 	float color[4];
-}
-__context;
+};
+static struct __Context __context;
 
-GLint __pullUniform(GLuint prog, const char *name)
+static GLint __pullUniform(GLuint prog, const char *name)
 {
 	GLint unif;
 	unif = glGetUniformLocation(prog, name);
 #ifdef DEBUG
 	if(unif == -1)
 	{
-		printf("Could not bind uniform '%s'\n",name);
+		printInfo("Could not bind uniform '%s'\n",name);
 	}
 #endif
 	return unif;
 }
 
-GLint __pullAttribute(GLuint prog, const char *name)
+static GLint __pullAttribute(GLuint prog, const char *name)
 {
 	GLint attr;
 	attr = glGetAttribLocation(prog, name);
 #ifdef DEBUG
 	if(attr == -1)
 	{
-		printf("Could not bind attrib '%s'\n",name);
+		printInfo("Could not bind attrib '%s'\n",name);
 	}
 #endif
 	return attr;
 }
 
-void __loadShaders(struct __ProgramSet *set)
+static void __loadShaders(struct __ProgramSet *set)
 {
 	set->vert = glCreateShader(GL_VERTEX_SHADER);
 	set->frag_fill = glCreateShader(GL_FRAGMENT_SHADER);
@@ -184,7 +241,7 @@ void __loadShaders(struct __ProgramSet *set)
 	set->prog_circle.fs_uniforms.color = __pullUniform(set->prog_circle.id, "uColor");
 }
 
-void __deleteShaders(struct __ProgramSet *set)
+static void __deleteShaders(struct __ProgramSet *set)
 {
 	glDetachShader(set->prog_fill.id, set->vert);
 	glDetachShader(set->prog_fill.id, set->frag_fill);
@@ -200,26 +257,87 @@ void __deleteShaders(struct __ProgramSet *set)
 	glDeleteShader(set->frag_circle);
 }
 
-void __loadBuffers(struct __Buffers *buffers)
+static void __loadBuffers(struct __Buffers *buffers)
 {
 	glGenBuffers(1, &buffers->quad_buffer);
 	glBindBuffer(GL_ARRAY_BUFFER, buffers->quad_buffer);
-	float quad[8] = {
+	float quad[12] = {
 		1.0f,1.0f,
 		-1.0f,1.0f,
 		-1.0f,-1.0f,
+		1.0f,1.0f,
+		-1.0f,-1.0f,
 		1.0f,-1.0f
 	};
-	glBufferData(GL_ARRAY_BUFFER, 4*2*sizeof(float), quad, GL_STATIC_DRAW);
+	glBufferData(GL_ARRAY_BUFFER, 2*3*2*sizeof(float), quad, GL_STATIC_DRAW);
 	glBindBuffer(GL_ARRAY_BUFFER, 0);
 }
 
-void __deleteBuffers(struct __Buffers *buffers)
+static void __deleteBuffers(struct __Buffers *buffers)
 {
 	glBindBuffer(GL_ARRAY_BUFFER, 0);
 	glDeleteBuffers(1, &buffers->quad_buffer);
 }
 
+/* Initializes graphics subsystem */
+int initGraphics()
+{
+	glEnable(GL_BLEND);
+	glBlendFunc(GL_SRC_ALPHA,GL_ONE);
+
+	glClearColor(0,0,0,0);
+	glClear(GL_COLOR_BUFFER_BIT);
+
+	__loadShaders(&(__context.shaders));
+	__loadBuffers(&(__context.buffers));
+	
+	__context.modelview_matrix[0] = 1.0f;
+	__context.modelview_matrix[1] = 0.0f;
+	__context.modelview_matrix[2] = 0.0f;
+	__context.modelview_matrix[3] = 1.0f;
+	
+	__context.translation[0] = 0.0f;
+	__context.translation[1] = 0.0f;
+	
+	//printInfo("initGraphics()\n");
+
+#ifdef DEBUG
+	__checkError();
+#endif
+}
+
+/* Safely disposes graphics subsystem */
+int disposeGraphics()
+{
+	__deleteBuffers(&(__context.buffers));
+	__deleteShaders(&(__context.shaders));
+	
+	//printInfo("disposeGraphics()\n");
+
+#ifdef DEBUG
+	__checkError();
+#endif
+}
+
+/* Performs resizing of window */
+void resizeGraphics(int width, int height)
+{
+	__context.width = width;
+	__context.height = height;
+	
+	glViewport(0,0,width,height);
+	
+	__context.projection_matrix[0] = 2.0f/width;
+	__context.projection_matrix[1] = 0.0f;
+	__context.projection_matrix[2] = 0.0f;
+	__context.projection_matrix[3] = 2.0f/height;
+	
+	//printInfo("resizeGraphics(%d,%d)\n",width,height);
+	
+#ifdef DEBUG
+	__checkError();
+#endif
+}
 
 void translate(const float *vector)
 {
@@ -263,24 +381,24 @@ void clear()
 	glClear(GL_COLOR_BUFFER_BIT);
 }
 
-void __setModelviewUniforms(struct __VertexShaderUniforms *unifs, const float *v, const float *m, const float *p)
+static void __setModelviewUniforms(struct __VertexShaderUniforms *unifs, const float *v, const float *m, const float *p)
 {
 	glUniform2fv(unifs->trans, 1, v);
 	glUniformMatrix2fv(unifs->proj, 1, GL_FALSE, p);
 	glUniformMatrix2fv(unifs->view, 1, GL_FALSE, m);
 }
 
-void __setFillColorUniform(const float *c)
+static void __setFillColorUniform(const float *c)
 {
 	glUniform4fv(__context.shaders.prog_fill.fs_uniforms.color, 1, c);
 }
 
-void __setCircleColorUniform(const float *c)
+static void __setCircleColorUniform(const float *c)
 {
 	glUniform4fv(__context.shaders.prog_circle.fs_uniforms.color, 1, c);
 }
 
-void __useFillProgram(const float *vec, const float *mv, const float *proj, const float *col)
+static void __useFillProgram(const float *vec, const float *mv, const float *proj, const float *col)
 {
 	glUseProgram(__context.shaders.prog_fill.id);
 	{
@@ -292,14 +410,17 @@ void __useFillProgram(const float *vec, const float *mv, const float *proj, cons
 			glBindBuffer(GL_ARRAY_BUFFER, __context.buffers.quad_buffer);
 			glVertexAttribPointer(__context.shaders.prog_fill.vs_attribs.coord, 2, GL_FLOAT, GL_FALSE, 0, NULL);
 			glBindBuffer(GL_ARRAY_BUFFER, 0);
-			glDrawArrays(GL_QUADS,0,4);
+			glDrawArrays(GL_TRIANGLES,0,6);
 		}
 		glDisableVertexAttribArray(__context.shaders.prog_fill.vs_attribs.coord);
 	}
 	glUseProgram(0);
+#ifdef DEBUG
+	__checkError();
+#endif
 }
 
-void __useCircleProgram(const float *vec, const float *mv, const float *proj, const float *col)
+static void __useCircleProgram(const float *vec, const float *mv, const float *proj, const float *col)
 {
 	glUseProgram(__context.shaders.prog_circle.id);
 	{
@@ -311,11 +432,14 @@ void __useCircleProgram(const float *vec, const float *mv, const float *proj, co
 			glBindBuffer(GL_ARRAY_BUFFER, __context.buffers.quad_buffer);
 			glVertexAttribPointer(__context.shaders.prog_circle.vs_attribs.coord, 2, GL_FLOAT, GL_FALSE, 0, NULL);
 			glBindBuffer(GL_ARRAY_BUFFER, 0);
-			glDrawArrays(GL_QUADS,0,4);
+			glDrawArrays(GL_TRIANGLES,0,6);
 		}
 		glDisableVertexAttribArray(__context.shaders.prog_circle.vs_attribs.coord);
 	}
 	glUseProgram(0);
+#ifdef DEBUG
+	__checkError();
+#endif
 }
 
 void fill()
