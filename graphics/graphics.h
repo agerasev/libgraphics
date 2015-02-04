@@ -34,17 +34,21 @@ void transform(const float *matrix);
 
 /* Color */
 void setColor(unsigned color);
-void setFloatColor(const float *color);
+void setColorFloat(const float *color);
 
 /* Fill */
 void clear();
 void fill();
 
 /* Geometry */
-void quad();
-void circle();
+void drawQuad();
+void drawCircle();
+/*
+void ring(float in);
+void circleSegment(float angle);
+void ringSegment(float in, float angle);
+*/
 
 #ifdef __cplusplus
 }
 #endif
-
