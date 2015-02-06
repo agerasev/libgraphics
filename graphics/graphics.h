@@ -33,8 +33,8 @@ void translate(const float *vector);
 void transform(const float *matrix);
 
 /* Color */
-void setColor(unsigned color);
-void setColorFloat(const float *color);
+void setColorInt(unsigned color);
+void setColor(const float *color);
 
 /* Fill */
 void clear();
@@ -43,10 +43,10 @@ void fill();
 /* Geometry */
 void drawQuad();
 void drawCircle();
+void drawRing(float in);
 /*
-void ring(float in);
-void circleSegment(float angle);
-void ringSegment(float in, float angle);
+void drawCircleSegment(float angle);
+void drawRingSegment(float in, float angle);
 */
 
 #ifdef __cplusplus
