@@ -195,6 +195,8 @@ int initGraphics()
 #ifdef DEBUG
 	checkError();
 #endif
+	
+	return 0;
 }
 
 /* Safely disposes graphics subsystem */
@@ -209,6 +211,8 @@ int disposeGraphics()
 #ifdef DEBUG
 	checkError();
 #endif
+	
+	return 0;
 }
 
 /* Performs resizing of window */
@@ -273,6 +277,17 @@ static void setVectorUniforms(Program *prog, const float *v, const float *m, con
 	glUniformMatrix2fv(getUniform(prog,U_MODELVIEW), 1, GL_FALSE, m);
 }
 
+static void setVectorUniformsPix(Program *prog, const float *v, const float *m, const float *p)
+{
+	float mat[4] = {
+	  m[0] + p[0]*m[0] + p[1]*m[2],
+	  m[1] + p[0]*m[1] + p[1]*m[3],
+	  m[2] + p[2]*m[0] + p[3]*m[2],
+	  m[3] + p[2]*m[1] + p[3]*m[3]
+	};
+	setVectorUniforms(prog,v,mat,p);
+}
+
 static void setColorUniform(Program *prog, const float *c)
 {
 	glUniform4fv(getUniform(prog,U_COLOR), 1, c);
@@ -311,7 +326,7 @@ void drawQuad()
 	Program *prog = context.programs.quad;
 	glUseProgram(prog->id);
 	{
-		setVectorUniforms(prog,context.translation,context.modelview_matrix,context.projection_matrix);
+		setVectorUniformsPix(prog,context.translation,context.modelview_matrix,context.projection_matrix);
 		setColorUniform(prog,context.color);
 		
 		drawArray(prog);
@@ -327,7 +342,7 @@ void drawCircle()
 	Program *prog = context.programs.circle;
 	glUseProgram(prog->id);
 	{
-		setVectorUniforms(prog,context.translation,context.modelview_matrix,context.projection_matrix);
+		setVectorUniformsPix(prog,context.translation,context.modelview_matrix,context.projection_matrix);
 		setColorUniform(prog,context.color);
 		
 		drawArray(prog);
@@ -343,7 +358,7 @@ void drawRing(float in)
 	Program *prog = context.programs.ring;
 	glUseProgram(prog->id);
 	{
-		setVectorUniforms(prog,context.translation,context.modelview_matrix,context.projection_matrix);
+		setVectorUniformsPix(prog,context.translation,context.modelview_matrix,context.projection_matrix);
 		setColorUniform(prog,context.color);
 		glUniform1fv(getUniform(prog,U_INNER_MUL), 1, &in);
 		
