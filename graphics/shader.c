@@ -138,14 +138,14 @@ Shader *createShader(GLenum type,
 	int i;
 	
 	shader->attribs_lenght = attribs_length;
-	shader->attribs = (const GLchar**)malloc(attribs_length);
+	shader->attribs = (const GLchar**)malloc(sizeof(GLchar*)*attribs_length);
 	for(i = 0; i < attribs_length; ++i)
 	{
 		shader->attribs[i] = attribs[i];
 	}
 	
 	shader->uniforms_lenght = uniforms_length;
-	shader->uniforms = (const GLchar**)malloc(uniforms_length);
+	shader->uniforms = (const GLchar**)malloc(sizeof(GLchar*)*uniforms_length);
 	for(i = 0; i < uniforms_length; ++i)
 	{
 		shader->uniforms[i] = uniforms[i];

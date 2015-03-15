@@ -106,24 +106,25 @@ static void loadShaders(Shaders *shaders)
 {
 	shaders->vert = createShader(
 	  GL_VERTEX_SHADER, "vertex", SRC_VERT,
-	  UNIF_VERT, ARRAY_SIZE(UNIF_VERT),
-	  ATTR_VERT, ARRAY_SIZE(ATTR_VERT)
+	  UNIF_VERT, UNIF_VERT_SIZE,
+	  ATTR_VERT, ATTR_VERT_SIZE
 	);
+	
 	shaders->frag_fill = createShader(
 	  GL_FRAGMENT_SHADER, "fill", SRC_FRAG_FILL,
-	  UNIF_FRAG_FILL, ARRAY_SIZE(UNIF_FRAG_FILL), NULL, 0
+	  UNIF_FRAG_FILL, UNIF_FRAG_FILL_SIZE, NULL, 0
 	);
 	shaders->frag_quad = createShader(
 	  GL_FRAGMENT_SHADER, "quad", SRC_FRAG_QUAD,
-	  UNIF_FRAG_QUAD, ARRAY_SIZE(UNIF_FRAG_QUAD), NULL, 0
+	  UNIF_FRAG_QUAD, UNIF_FRAG_QUAD_SIZE, NULL, 0
 	);
 	shaders->frag_circle = createShader(
 	  GL_FRAGMENT_SHADER, "circle", SRC_FRAG_CIRCLE,
-	  UNIF_FRAG_CIRCLE, ARRAY_SIZE(UNIF_FRAG_CIRCLE), NULL, 0
+	  UNIF_FRAG_CIRCLE, UNIF_FRAG_CIRCLE_SIZE, NULL, 0
 	);
 	shaders->frag_ring = createShader(
 	  GL_FRAGMENT_SHADER, "ring", SRC_FRAG_RING,
-	  UNIF_FRAG_RING, ARRAY_SIZE(UNIF_FRAG_RING), NULL, 0
+	  UNIF_FRAG_RING, UNIF_FRAG_RING_SIZE, NULL, 0
 	);
 }
 
