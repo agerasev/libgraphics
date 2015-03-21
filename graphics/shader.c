@@ -47,6 +47,7 @@ static void printProgramLinkingErrors(GLuint id, const char *name)
 	}
 }
 
+/*
 static void checkError() 
 {
 	GLint i;
@@ -55,6 +56,7 @@ static void checkError()
 		printWarn("glError 0x%x\n", i);
 	}
 }
+*/
 
 #endif
 

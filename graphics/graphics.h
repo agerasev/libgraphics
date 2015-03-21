@@ -4,50 +4,62 @@
  * Library for simple graphics
  */
 
-#define BLACK    0xff000000
-#define WHITE    0xffffffff
-#define RED      0xff0000ff
-#define GREEN    0xff00ff00
-#define BLUE     0xffff0000
-#define YELLOW   0xff00ffff
-#define CYAN     0xffffff00
-#define MAGENTA  0xffff00ff
+#define G_BLACK    0xff000000
+#define G_WHITE    0xffffffff
+#define G_RED      0xff0000ff
+#define G_GREEN    0xff00ff00
+#define G_BLUE     0xffff0000
+#define G_YELLOW   0xff00ffff
+#define G_CYAN     0xffffff00
+#define G_MAGENTA  0xffff00ff
 
-#define ALPHA(c) (((int)(255.0f*c)<<24)|0x00ffffff)
+#define G_ALPHA(c) (((int)(255.0f*c)<<24)|0x00ffffff)
+
+typedef struct GImage
+{
+	unsigned int _id;
+	int width, height;
+} 
+GImage;
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
 /* Initializes graphics subsystem */
-int initGraphics();
+int gInit();
 
 /* Safely disposes graphics subsystem */
-int disposeGraphics();
+int gDispose();
 
 /* Performs resizing of window */
-void resizeGraphics(int width, int height);
+void gResize(int width, int height);
 
 /* Transform */
-void translate(const float *vector);
-void transform(const float *matrix);
+void gTranslate(const float vector[2]);
+void gTransform(const float matrix[4]);
 
 /* Color */
-void setColorInt(unsigned color);
-void setColor(const float *color);
+void gSetColorInt(unsigned color);
+void gSetColor(const float color[4]);
 
 /* Fill */
-void clear();
-void fill();
+void gClear();
+void gFill();
 
 /* Geometry */
-void drawQuad();
-void drawCircle();
-void drawRing(float in);
+void gDrawQuad();
+void gDrawCircle();
+void gDrawRing(float in);
 /*
-void drawCircleSegment(float angle);
-void drawRingSegment(float in, float angle);
+void gDrawCircleSegment(float angle);
+void gDrawRingSegment(float in, float angle);
 */
+
+/* Images */
+GImage *gGenImage(int width, int height, void *data);
+void gFreeImage(GImage *image);
+void gDrawImage(GImage *image);
 
 #ifdef __cplusplus
 }

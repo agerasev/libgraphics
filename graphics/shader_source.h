@@ -41,6 +41,7 @@ static const GLchar *SRC_VERT =
 
 /* Uniforms */
 #define U_COLOR       "uColor"
+#define U_TEXTURE     "uTexture"
 
 #define UNIF_FRAG_FILL_SIZE 1
 static const GLchar *UNIF_FRAG_FILL[UNIF_FRAG_FILL_SIZE] = {U_COLOR};
@@ -50,6 +51,17 @@ static const GLchar *SRC_FRAG_FILL =
 	"varying vec2 "V_POSITION";\n"
 	"void main(void) {\n"
 		"gl_FragColor = "U_COLOR";\n"
+	"}\n";
+
+#define UNIF_FRAG_TEX_SIZE 2
+static const GLchar *UNIF_FRAG_TEX[UNIF_FRAG_TEX_SIZE] = {U_COLOR,U_TEXTURE};
+static const GLchar *SRC_FRAG_TEX =
+	GLSL_PRECISION
+	"uniform vec4 "U_COLOR";\n"
+  "uniform sampler2D "U_TEXTURE";\n"
+	"varying vec2 "V_POSITION";\n"
+	"void main(void) {\n"
+		"gl_FragColor = "U_COLOR"*texture2D("U_TEXTURE",vec2(0.5,-0.5)*"V_POSITION" + vec2(0.5,0.5));\n"
 	"}\n";
 
 #define UNIF_FRAG_QUAD_SIZE 2

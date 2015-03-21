@@ -1,3 +1,7 @@
+#include "graphics.h"
+
+#include<stdlib.h>
+
 #define DEBUG
 
 #ifdef __ANDROID__
@@ -47,6 +51,7 @@ typedef struct Shaders
 {
 	Shader *vert;
 	Shader *frag_fill;
+	Shader *frag_tex;
 	Shader *frag_quad;
 	Shader *frag_circle;
 	Shader *frag_ring;
@@ -56,6 +61,7 @@ Shaders;
 typedef struct Programs
 {
 	Program *fill;
+	Program *tex;
 	Program *quad;
 	Program *circle;
 	Program *ring;
@@ -79,6 +85,12 @@ typedef struct Context
 }
 Context;
 static Context context;
+
+typedef struct Texture
+{
+	GLuint id;
+} 
+Texture;
 
 static void loadBuffers(Buffers *buffers)
 {
@@ -114,6 +126,10 @@ static void loadShaders(Shaders *shaders)
 	  GL_FRAGMENT_SHADER, "fill", SRC_FRAG_FILL,
 	  UNIF_FRAG_FILL, UNIF_FRAG_FILL_SIZE, NULL, 0
 	);
+	shaders->frag_tex = createShader(
+	  GL_FRAGMENT_SHADER, "tex", SRC_FRAG_TEX,
+	  UNIF_FRAG_TEX, UNIF_FRAG_FILL_SIZE, NULL, 0
+	);
 	shaders->frag_quad = createShader(
 	  GL_FRAGMENT_SHADER, "quad", SRC_FRAG_QUAD,
 	  UNIF_FRAG_QUAD, UNIF_FRAG_QUAD_SIZE, NULL, 0
@@ -132,6 +148,7 @@ static void deleteShaders(Shaders *shaders)
 {
 	destroyShader(shaders->vert);
 	destroyShader(shaders->frag_fill);
+	destroyShader(shaders->frag_tex);
 	destroyShader(shaders->frag_quad);
 	destroyShader(shaders->frag_circle);
 	destroyShader(shaders->frag_ring);
@@ -140,6 +157,7 @@ static void deleteShaders(Shaders *shaders)
 static void loadPrograms(Programs *progs, Shaders *shaders)
 {
 	progs->fill = createProgram("fill",shaders->vert,shaders->frag_fill);
+	progs->tex = createProgram("tex",shaders->vert,shaders->frag_tex);
 	progs->quad = createProgram("quad",shaders->vert,shaders->frag_quad);
 	progs->circle = createProgram("circle",shaders->vert,shaders->frag_circle);
 	progs->ring = createProgram("ring",shaders->vert,shaders->frag_ring);
@@ -148,6 +166,7 @@ static void loadPrograms(Programs *progs, Shaders *shaders)
 static void deletePrograms(Programs *progs)
 {
 	destroyProgram(progs->fill);
+	destroyProgram(progs->tex);
 	destroyProgram(progs->quad);
 	destroyProgram(progs->circle);
 	destroyProgram(progs->ring);
@@ -175,11 +194,15 @@ static void setProjection(float a00, float a01, float a10, float a11)
 }
 
 /* Initializes graphics subsystem */
-int initGraphics()
+int gInit()
 {
 	glEnable(GL_BLEND);
-	glBlendFunc(GL_SRC_ALPHA,GL_ONE);
-
+	glBlendFunc(GL_SRC_ALPHA,GL_ONE_MINUS_SRC_ALPHA);
+	
+	//glEnable(GL_TEXTURE_2D);
+	
+	glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
+	
 	glClearColor(0,0,0,0);
 	glClear(GL_COLOR_BUFFER_BIT);
 
@@ -201,7 +224,7 @@ int initGraphics()
 }
 
 /* Safely disposes graphics subsystem */
-int disposeGraphics()
+int gDispose()
 {
 	deleteBuffers (&(context.buffers));
 	deletePrograms(&(context.programs));
@@ -217,7 +240,7 @@ int disposeGraphics()
 }
 
 /* Performs resizing of window */
-void resizeGraphics(int width, int height)
+void gResize(int width, int height)
 {
 	context.width = width;
 	context.height = height;
@@ -233,12 +256,12 @@ void resizeGraphics(int width, int height)
 #endif
 }
 
-void translate(const float *vector)
+void gTranslate(const float vector[2])
 {
 	setTranslation(vector[0],vector[1]);
 }
 
-void transform(const float *matrix)
+void gTransform(const float matrix[4])
 {
 	setModelview(matrix[0],matrix[1],matrix[2],matrix[3]);
 }
@@ -250,7 +273,7 @@ void transform(const float *matrix)
 
 #define __tofloat(c) (c*(1.0f/255.0f))
 
-void setColorInt(unsigned color)
+void gSetColorInt(unsigned color)
 {
 	context.color[0] = __tofloat(__red(color));
 	context.color[1] = __tofloat(__green(color));
@@ -258,7 +281,7 @@ void setColorInt(unsigned color)
 	context.color[3] = __tofloat(__alpha(color));
 }
 
-void setColor(const float *color)
+void gSetColor(const float color[4])
 {
 	context.color[0] = color[0];
 	context.color[1] = color[1];
@@ -266,7 +289,7 @@ void setColor(const float *color)
 	context.color[3] = color[3];
 }
 
-void clear()
+void gClear()
 {
 	glClear(GL_COLOR_BUFFER_BIT);
 }
@@ -306,12 +329,12 @@ static void drawArray(Program *prog)
 		glDisableVertexAttribArray(getAttribute(prog,A_COORD));
 }
 
-void fill()
+void gFill()
 {
 	Program *prog = context.programs.fill;
 	glUseProgram(prog->id);
 	{
-		setVectorUniforms(prog,context.translation,context.modelview_matrix,context.projection_matrix);
+		setVectorUniforms(prog,NULLVEC,UNIMAT,UNIMAT);
 		setColorUniform(prog,context.color);
 		
 		drawArray(prog);
@@ -322,7 +345,7 @@ void fill()
 #endif
 }
 
-void drawQuad()
+void gDrawQuad()
 {
 	Program *prog = context.programs.quad;
 	glUseProgram(prog->id);
@@ -338,7 +361,7 @@ void drawQuad()
 #endif
 }
 
-void drawCircle()
+void gDrawCircle()
 {
 	Program *prog = context.programs.circle;
 	glUseProgram(prog->id);
@@ -354,7 +377,7 @@ void drawCircle()
 #endif
 }
 
-void drawRing(float in)
+void gDrawRing(float in)
 {
 	Program *prog = context.programs.ring;
 	glUseProgram(prog->id);
@@ -362,6 +385,60 @@ void drawRing(float in)
 		setVectorUniformsPix(prog,context.translation,context.modelview_matrix,context.projection_matrix);
 		setColorUniform(prog,context.color);
 		glUniform1fv(getUniform(prog,U_INNER_MUL), 1, &in);
+		
+		drawArray(prog);
+	}
+	glUseProgram(0);
+#ifdef DEBUG
+	checkError();
+#endif
+}
+
+GImage *gGenImage(int width, int height, void *data)
+{
+	GImage *image = (GImage*)malloc(sizeof(GImage));
+	
+	glGenTextures(1,&image->_id);
+#ifdef DEBUG
+	checkError("glGenTexture");
+#endif
+	
+	glActiveTexture(GL_TEXTURE0);
+	glBindTexture(GL_TEXTURE_2D, image->_id);
+	
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, data);
+#ifdef DEBUG
+	checkError("glTexImage");
+#endif
+	
+	image->width = width;
+	image->height = height;
+	
+	return image;
+}
+
+void gFreeImage(GImage *image)
+{
+	glDeleteTextures(1,&image->_id);
+	free(image);
+}
+
+void gDrawImage(GImage *image)
+{
+	Program *prog = context.programs.tex;
+	glUseProgram(prog->id);
+	{
+		setVectorUniformsPix(prog,context.translation,context.modelview_matrix,context.projection_matrix);
+		setColorUniform(prog,context.color);
+		
+		glActiveTexture(GL_TEXTURE0);
+		glBindTexture(GL_TEXTURE_2D, image->_id);
+		glUniform1i(getUniform(prog,U_TEXTURE),0);
 		
 		drawArray(prog);
 	}
