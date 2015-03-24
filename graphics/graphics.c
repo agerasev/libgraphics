@@ -1,6 +1,7 @@
 #include "graphics.h"
 
-#include<stdlib.h>
+#include <stdlib.h>
+#include <math.h>
 
 #define DEBUG
 
@@ -289,6 +290,21 @@ void gSetColor(const float color[4])
 	context.color[3] = color[3];
 }
 
+void gSetBlendMode(unsigned mode)
+{
+	switch(mode)
+	{
+	case G_BLEND_ADDITION:
+		glBlendFunc(GL_SRC_ALPHA,GL_ONE);
+		break;
+	case G_BLEND_OVERLAY:
+		glBlendFunc(GL_SRC_ALPHA,GL_ONE_MINUS_SRC_ALPHA);
+		break;
+	default:
+		break;
+	}
+}
+
 void gClear()
 {
 	glClear(GL_COLOR_BUFFER_BIT);
@@ -303,13 +319,18 @@ static void setVectorUniforms(Program *prog, const float *v, const float *m, con
 
 static void setVectorUniformsPix(Program *prog, const float *v, const float *m, const float *p)
 {
+	float ax = sqrt(m[0]*m[0] + m[1]*m[1]);
+	float ay = sqrt(m[2]*m[2] + m[3]*m[3]);
+	ax = (ax + 0.5f)/ax;
+	ay = (ay + 0.5f)/ay;
 	float mat[4] = {
-	  m[0] + p[0]*m[0] + p[1]*m[2],
-	  m[1] + p[0]*m[1] + p[1]*m[3],
-	  m[2] + p[2]*m[0] + p[3]*m[2],
-	  m[3] + p[2]*m[1] + p[3]*m[3]
+	  m[0]*ax,
+	  m[1]*ax,
+	  m[2]*ay,
+	  m[3]*ay
 	};
 	setVectorUniforms(prog,v,mat,p);
+	
 }
 
 static void setColorUniform(Program *prog, const float *c)

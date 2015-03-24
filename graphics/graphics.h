@@ -15,6 +15,9 @@
 
 #define G_ALPHA(c) (((int)(255.0f*c)<<24)|0x00ffffff)
 
+#define G_BLEND_ADDITION   0x01
+#define G_BLEND_OVERLAY    0x02
+
 typedef struct GImage
 {
 	unsigned int _id;
@@ -42,6 +45,7 @@ void gTransform(const float matrix[4]);
 /* Color */
 void gSetColorInt(unsigned color);
 void gSetColor(const float color[4]);
+void gSetBlendMode(unsigned mode);
 
 /* Fill */
 void gClear();
