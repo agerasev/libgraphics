@@ -50,7 +50,8 @@ Buffers;
 
 typedef struct Shaders
 {
-	Shader *vert;
+	Shader *vert_hard;
+	Shader *vert_smooth;
 	Shader *frag_fill;
 	Shader *frag_tex;
 	Shader *frag_quad;
@@ -117,10 +118,16 @@ static void deleteBuffers(Buffers *buffers)
 
 static void loadShaders(Shaders *shaders)
 {
-	shaders->vert = createShader(
-	  GL_VERTEX_SHADER, "vertex", SRC_VERT,
-	  UNIF_VERT, UNIF_VERT_SIZE,
-	  ATTR_VERT, ATTR_VERT_SIZE
+	shaders->vert_hard = createShader(
+	  GL_VERTEX_SHADER, "hard", SRC_VERT_HARD,
+	  UNIF_VERT_HARD, UNIF_VERT_HARD_SIZE,
+	  ATTR_VERT_HARD, ATTR_VERT_HARD_SIZE
+	);
+	
+	shaders->vert_smooth = createShader(
+	  GL_VERTEX_SHADER, "smooth", SRC_VERT_SMOOTH,
+	  UNIF_VERT_SMOOTH, UNIF_VERT_SMOOTH_SIZE,
+	  ATTR_VERT_SMOOTH, ATTR_VERT_SMOOTH_SIZE
 	);
 	
 	shaders->frag_fill = createShader(
@@ -147,7 +154,8 @@ static void loadShaders(Shaders *shaders)
 
 static void deleteShaders(Shaders *shaders)
 {
-	destroyShader(shaders->vert);
+	destroyShader(shaders->vert_hard);
+	destroyShader(shaders->vert_smooth);
 	destroyShader(shaders->frag_fill);
 	destroyShader(shaders->frag_tex);
 	destroyShader(shaders->frag_quad);
@@ -157,11 +165,11 @@ static void deleteShaders(Shaders *shaders)
 
 static void loadPrograms(Programs *progs, Shaders *shaders)
 {
-	progs->fill = createProgram("fill",shaders->vert,shaders->frag_fill);
-	progs->tex = createProgram("tex",shaders->vert,shaders->frag_tex);
-	progs->quad = createProgram("quad",shaders->vert,shaders->frag_quad);
-	progs->circle = createProgram("circle",shaders->vert,shaders->frag_circle);
-	progs->ring = createProgram("ring",shaders->vert,shaders->frag_ring);
+	progs->fill   = createProgram("fill",   shaders->vert_hard,   shaders->frag_fill);
+	progs->tex    = createProgram("tex",    shaders->vert_hard,   shaders->frag_tex);
+	progs->quad   = createProgram("quad",   shaders->vert_smooth, shaders->frag_quad);
+	progs->circle = createProgram("circle", shaders->vert_smooth, shaders->frag_circle);
+	progs->ring   = createProgram("ring",   shaders->vert_smooth, shaders->frag_ring);
 }
 
 static void deletePrograms(Programs *progs)
@@ -317,22 +325,6 @@ static void setVectorUniforms(Program *prog, const float *v, const float *m, con
 	glUniformMatrix2fv(getUniform(prog,U_MODELVIEW), 1, GL_FALSE, m);
 }
 
-static void setVectorUniformsPix(Program *prog, const float *v, const float *m, const float *p)
-{
-	float ax = sqrt(m[0]*m[0] + m[1]*m[1]);
-	float ay = sqrt(m[2]*m[2] + m[3]*m[3]);
-	ax = (ax + 0.5f)/ax;
-	ay = (ay + 0.5f)/ay;
-	float mat[4] = {
-	  m[0]*ax,
-	  m[1]*ax,
-	  m[2]*ay,
-	  m[3]*ay
-	};
-	setVectorUniforms(prog,v,mat,p);
-	
-}
-
 static void setColorUniform(Program *prog, const float *c)
 {
 	glUniform4fv(getUniform(prog,U_COLOR), 1, c);
@@ -371,7 +363,7 @@ void gDrawQuad()
 	Program *prog = context.programs.quad;
 	glUseProgram(prog->id);
 	{
-		setVectorUniformsPix(prog,context.translation,context.modelview_matrix,context.projection_matrix);
+		setVectorUniforms(prog,context.translation,context.modelview_matrix,context.projection_matrix);
 		setColorUniform(prog,context.color);
 		
 		drawArray(prog);
@@ -387,7 +379,7 @@ void gDrawCircle()
 	Program *prog = context.programs.circle;
 	glUseProgram(prog->id);
 	{
-		setVectorUniformsPix(prog,context.translation,context.modelview_matrix,context.projection_matrix);
+		setVectorUniforms(prog,context.translation,context.modelview_matrix,context.projection_matrix);
 		setColorUniform(prog,context.color);
 		
 		drawArray(prog);
@@ -403,7 +395,7 @@ void gDrawRing(float in)
 	Program *prog = context.programs.ring;
 	glUseProgram(prog->id);
 	{
-		setVectorUniformsPix(prog,context.translation,context.modelview_matrix,context.projection_matrix);
+		setVectorUniforms(prog,context.translation,context.modelview_matrix,context.projection_matrix);
 		setColorUniform(prog,context.color);
 		glUniform1fv(getUniform(prog,U_INNER_MUL), 1, &in);
 		
@@ -454,7 +446,7 @@ void gDrawImage(GImage *image)
 	Program *prog = context.programs.tex;
 	glUseProgram(prog->id);
 	{
-		setVectorUniformsPix(prog,context.translation,context.modelview_matrix,context.projection_matrix);
+		setVectorUniforms(prog,context.translation,context.modelview_matrix,context.projection_matrix);
 		setColorUniform(prog,context.color);
 		
 		glActiveTexture(GL_TEXTURE0);

@@ -23,11 +23,12 @@
 /* Varyings */
 #define V_POSITION    "vPosition"
 
-#define ATTR_VERT_SIZE 1
-#define UNIF_VERT_SIZE 3
-static const GLchar *ATTR_VERT[ATTR_VERT_SIZE] = {A_COORD};
-static const GLchar *UNIF_VERT[UNIF_VERT_SIZE] = {U_TRANSLATION, U_PROJECTION, U_MODELVIEW};
-static const GLchar *SRC_VERT = 
+#define SHADER_VERT_HARD 0x0101
+#define ATTR_VERT_HARD_SIZE 1
+#define UNIF_VERT_HARD_SIZE 3
+static const GLchar *ATTR_VERT_HARD[ATTR_VERT_HARD_SIZE] = {A_COORD};
+static const GLchar *UNIF_VERT_HARD[UNIF_VERT_HARD_SIZE] = {U_TRANSLATION, U_PROJECTION, U_MODELVIEW};
+static const GLchar *SRC_VERT_HARD = 
 	GLSL_PRECISION
 	"uniform vec2 "U_TRANSLATION";\n"
 	"uniform mat2 "U_PROJECTION";\n"
@@ -35,14 +36,32 @@ static const GLchar *SRC_VERT =
 	"attribute vec2 "A_COORD";\n"
 	"varying vec2 "V_POSITION";\n"
 	"void main(void) {\n"
-		V_POSITION" = "A_COORD";\n"
-		"gl_Position = vec4("U_PROJECTION"*("U_MODELVIEW"*"A_COORD" + "U_TRANSLATION"),0.0,1.0);\n"
+		V_POSITION" = "A_COORD" + "A_COORD"*"U_PROJECTION";\n"
+		"gl_Position = vec4("U_PROJECTION"*("U_MODELVIEW"*"V_POSITION" + "U_TRANSLATION"),0.0,1.0);\n"
+	"}\n";
+
+#define SHADER_VERT_SMOOTH 0x0102
+#define ATTR_VERT_SMOOTH_SIZE 1
+#define UNIF_VERT_SMOOTH_SIZE 3
+static const GLchar *ATTR_VERT_SMOOTH[ATTR_VERT_SMOOTH_SIZE] = {A_COORD};
+static const GLchar *UNIF_VERT_SMOOTH[UNIF_VERT_SMOOTH_SIZE] = {U_TRANSLATION, U_PROJECTION, U_MODELVIEW};
+static const GLchar *SRC_VERT_SMOOTH = 
+	GLSL_PRECISION
+	"uniform vec2 "U_TRANSLATION";\n"
+	"uniform mat2 "U_PROJECTION";\n"
+	"uniform mat2 "U_MODELVIEW";\n"
+	"attribute vec2 "A_COORD";\n"
+	"varying vec2 "V_POSITION";\n"
+	"void main(void) {\n"
+		V_POSITION" = "A_COORD" + "A_COORD"*"U_PROJECTION";\n"
+		"gl_Position = vec4("U_PROJECTION"*("U_MODELVIEW"*"V_POSITION" + "U_TRANSLATION"),0.0,1.0);\n"
 	"}\n";
 
 /* Uniforms */
 #define U_COLOR       "uColor"
 #define U_TEXTURE     "uTexture"
 
+#define SHADER_FRAG_FILL 0x0201
 #define UNIF_FRAG_FILL_SIZE 1
 static const GLchar *UNIF_FRAG_FILL[UNIF_FRAG_FILL_SIZE] = {U_COLOR};
 static const GLchar *SRC_FRAG_FILL =
@@ -53,6 +72,7 @@ static const GLchar *SRC_FRAG_FILL =
 		"gl_FragColor = "U_COLOR";\n"
 	"}\n";
 
+#define SHADER_FRAG_TEX 0x0202
 #define UNIF_FRAG_TEX_SIZE 2
 static const GLchar *UNIF_FRAG_TEX[UNIF_FRAG_TEX_SIZE] = {U_COLOR,U_TEXTURE};
 static const GLchar *SRC_FRAG_TEX =
@@ -64,6 +84,7 @@ static const GLchar *SRC_FRAG_TEX =
 		"gl_FragColor = "U_COLOR"*texture2D("U_TEXTURE",vec2(0.5,-0.5)*"V_POSITION" + vec2(0.5,0.5));\n"
 	"}\n";
 
+#define SHADER_FRAG_QUAD 0x0203
 #define UNIF_FRAG_QUAD_SIZE 2
 static const GLchar *UNIF_FRAG_QUAD[UNIF_FRAG_QUAD_SIZE] = {U_COLOR,U_MODELVIEW};
 static const GLchar *SRC_FRAG_QUAD =
@@ -76,9 +97,10 @@ static const GLchar *SRC_FRAG_QUAD =
 		"gl_FragColor = "U_COLOR"*(clamp(min(\n"
 		"  lBounds.x*min(1.0 - "V_POSITION".x, 1.0 + "V_POSITION".x),\n"
 		"  lBounds.y*min(1.0 - "V_POSITION".y, 1.0 + "V_POSITION".y)\n"
-		"),0.0,1.0));\n"
+		"),-0.5,0.5) + 0.5);\n"
 	"}\n";
 
+#define SHADER_FRAG_CIRCLE 0x0204
 #define UNIF_FRAG_CIRCLE_SIZE 2
 static const GLchar *UNIF_FRAG_CIRCLE[UNIF_FRAG_CIRCLE_SIZE] = {U_COLOR,U_MODELVIEW};
 static const GLchar *SRC_FRAG_CIRCLE =
@@ -90,11 +112,12 @@ static const GLchar *SRC_FRAG_CIRCLE =
 		"float lLen = length("V_POSITION");\n"
 		"vec2 lNorm = "V_POSITION"/lLen;\n"
 		"float lEllipseLen = length("U_MODELVIEW"*lNorm);\n"
-		"gl_FragColor = "U_COLOR"*(clamp((1.0 - lLen)*lEllipseLen,0.0,1.0));\n"
+		"gl_FragColor = "U_COLOR"*(clamp((1.0 - lLen)*lEllipseLen,-0.5,0.5) + 0.5);\n"
 	"}\n";
 
 #define U_INNER_MUL "uInnerMul"
 
+#define SHADER_FRAG_RING 0x0205
 #define UNIF_FRAG_RING_SIZE 3
 static const GLchar *UNIF_FRAG_RING[UNIF_FRAG_RING_SIZE] = {U_COLOR,U_MODELVIEW,U_INNER_MUL};
 static const GLchar *SRC_FRAG_RING =
@@ -108,7 +131,7 @@ static const GLchar *SRC_FRAG_RING =
 		"vec2 lNorm = "V_POSITION"/lLen;\n"
 		"float lEllipseLen = length("U_MODELVIEW"*lNorm);\n"
 		"gl_FragColor = "U_COLOR"*(clamp(min(\n"
-      "(1.0 - lLen)*lEllipseLen,\n"
-      "(lLen - "U_INNER_MUL")*lEllipseLen + 1.0\n"
-    "),0.0,1.0));\n"
+      "(1.0 - lLen),\n"
+      "(lLen - "U_INNER_MUL")\n"
+    ")*lEllipseLen,-0.5,0.5) + 0.5);\n"
 	"}\n";
