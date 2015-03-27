@@ -94,7 +94,7 @@ static const GLchar *SRC_FRAG_QUAD =
 	"varying vec2 "V_POSITION";\n"
 	"void main(void) {\n"
 		"vec2 lBounds = vec2(length("U_MODELVIEW"*vec2(1.0,0.0)),length("U_MODELVIEW"*vec2(0.0,1.0)));\n"
-		"gl_FragColor = "U_COLOR"*(clamp(min(\n"
+		"gl_FragColor = "U_COLOR"*vec4(1.0,1.0,1.0,clamp(min(\n"
 		"  lBounds.x*min(1.0 - "V_POSITION".x, 1.0 + "V_POSITION".x),\n"
 		"  lBounds.y*min(1.0 - "V_POSITION".y, 1.0 + "V_POSITION".y)\n"
 		"),-0.5,0.5) + 0.5);\n"
@@ -112,7 +112,7 @@ static const GLchar *SRC_FRAG_CIRCLE =
 		"float lLen = length("V_POSITION");\n"
 		"vec2 lNorm = "V_POSITION"/lLen;\n"
 		"float lEllipseLen = length("U_MODELVIEW"*lNorm);\n"
-		"gl_FragColor = "U_COLOR"*(clamp((1.0 - lLen)*lEllipseLen,-0.5,0.5) + 0.5);\n"
+		"gl_FragColor = "U_COLOR"*vec4(1.0,1.0,1.0,clamp((1.0 - lLen)*lEllipseLen,-0.5,0.5) + 0.5);\n"
 	"}\n";
 
 #define U_INNER_MUL "uInnerMul"
@@ -130,7 +130,7 @@ static const GLchar *SRC_FRAG_RING =
 		"float lLen = length("V_POSITION");\n"
 		"vec2 lNorm = "V_POSITION"/lLen;\n"
 		"float lEllipseLen = length("U_MODELVIEW"*lNorm);\n"
-		"gl_FragColor = "U_COLOR"*(clamp(min(\n"
+		"gl_FragColor = "U_COLOR"*vec4(1.0,1.0,1.0,clamp(min(\n"
       "(1.0 - lLen),\n"
       "(lLen - "U_INNER_MUL")\n"
     ")*lEllipseLen,-0.5,0.5) + 0.5);\n"
