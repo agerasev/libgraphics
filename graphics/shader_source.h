@@ -23,7 +23,6 @@
 /* Varyings */
 #define V_POSITION    "vPosition"
 
-#define SHADER_VERT_HARD 0x0101
 #define ATTR_VERT_HARD_SIZE 1
 #define UNIF_VERT_HARD_SIZE 3
 static const GLchar *ATTR_VERT_HARD[ATTR_VERT_HARD_SIZE] = {A_COORD};
@@ -36,11 +35,10 @@ static const GLchar *SRC_VERT_HARD =
 	"attribute vec2 "A_COORD";\n"
 	"varying vec2 "V_POSITION";\n"
 	"void main(void) {\n"
-		V_POSITION" = "A_COORD" + "A_COORD"*"U_PROJECTION";\n"
+		V_POSITION" = "A_COORD";\n"
 		"gl_Position = vec4("U_PROJECTION"*("U_MODELVIEW"*"V_POSITION" + "U_TRANSLATION"),0.0,1.0);\n"
 	"}\n";
 
-#define SHADER_VERT_SMOOTH 0x0102
 #define ATTR_VERT_SMOOTH_SIZE 1
 #define UNIF_VERT_SMOOTH_SIZE 3
 static const GLchar *ATTR_VERT_SMOOTH[ATTR_VERT_SMOOTH_SIZE] = {A_COORD};
@@ -61,7 +59,6 @@ static const GLchar *SRC_VERT_SMOOTH =
 #define U_COLOR       "uColor"
 #define U_TEXTURE     "uTexture"
 
-#define SHADER_FRAG_FILL 0x0201
 #define UNIF_FRAG_FILL_SIZE 1
 static const GLchar *UNIF_FRAG_FILL[UNIF_FRAG_FILL_SIZE] = {U_COLOR};
 static const GLchar *SRC_FRAG_FILL =
@@ -72,7 +69,6 @@ static const GLchar *SRC_FRAG_FILL =
 		"gl_FragColor = "U_COLOR";\n"
 	"}\n";
 
-#define SHADER_FRAG_TEX 0x0202
 #define UNIF_FRAG_TEX_SIZE 2
 static const GLchar *UNIF_FRAG_TEX[UNIF_FRAG_TEX_SIZE] = {U_COLOR,U_TEXTURE};
 static const GLchar *SRC_FRAG_TEX =
@@ -84,7 +80,6 @@ static const GLchar *SRC_FRAG_TEX =
 		"gl_FragColor = "U_COLOR"*texture2D("U_TEXTURE",vec2(0.5,-0.5)*"V_POSITION" + vec2(0.5,0.5));\n"
 	"}\n";
 
-#define SHADER_FRAG_QUAD 0x0203
 #define UNIF_FRAG_QUAD_SIZE 2
 static const GLchar *UNIF_FRAG_QUAD[UNIF_FRAG_QUAD_SIZE] = {U_COLOR,U_MODELVIEW};
 static const GLchar *SRC_FRAG_QUAD =
@@ -100,7 +95,6 @@ static const GLchar *SRC_FRAG_QUAD =
 		"),-0.5,0.5) + 0.5);\n"
 	"}\n";
 
-#define SHADER_FRAG_CIRCLE 0x0204
 #define UNIF_FRAG_CIRCLE_SIZE 2
 static const GLchar *UNIF_FRAG_CIRCLE[UNIF_FRAG_CIRCLE_SIZE] = {U_COLOR,U_MODELVIEW};
 static const GLchar *SRC_FRAG_CIRCLE =
@@ -117,7 +111,6 @@ static const GLchar *SRC_FRAG_CIRCLE =
 
 #define U_INNER_MUL "uInnerMul"
 
-#define SHADER_FRAG_RING 0x0205
 #define UNIF_FRAG_RING_SIZE 3
 static const GLchar *UNIF_FRAG_RING[UNIF_FRAG_RING_SIZE] = {U_COLOR,U_MODELVIEW,U_INNER_MUL};
 static const GLchar *SRC_FRAG_RING =
