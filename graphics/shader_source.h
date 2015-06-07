@@ -23,11 +23,11 @@
 /* Varyings */
 #define V_POSITION    "vPosition"
 
-#define ATTR_VERT_SIZE 1
-#define UNIF_VERT_SIZE 3
-static const GLchar *ATTR_VERT[ATTR_VERT_SIZE] = {A_COORD};
-static const GLchar *UNIF_VERT[UNIF_VERT_SIZE] = {U_TRANSLATION, U_PROJECTION, U_MODELVIEW};
-static const GLchar *SRC_VERT = 
+#define ATTR_VERT_HARD_SIZE 1
+#define UNIF_VERT_HARD_SIZE 3
+static const GLchar *ATTR_VERT_HARD[ATTR_VERT_HARD_SIZE] = {A_COORD};
+static const GLchar *UNIF_VERT_HARD[UNIF_VERT_HARD_SIZE] = {U_TRANSLATION, U_PROJECTION, U_MODELVIEW};
+static const GLchar *SRC_VERT_HARD = 
 	GLSL_PRECISION
 	"uniform vec2 "U_TRANSLATION";\n"
 	"uniform mat2 "U_PROJECTION";\n"
@@ -36,7 +36,23 @@ static const GLchar *SRC_VERT =
 	"varying vec2 "V_POSITION";\n"
 	"void main(void) {\n"
 		V_POSITION" = "A_COORD";\n"
-		"gl_Position = vec4("U_PROJECTION"*("U_MODELVIEW"*"A_COORD" + "U_TRANSLATION"),0.0,1.0);\n"
+		"gl_Position = vec4("U_PROJECTION"*("U_MODELVIEW"*"V_POSITION" + "U_TRANSLATION"),0.0,1.0);\n"
+	"}\n";
+
+#define ATTR_VERT_SMOOTH_SIZE 1
+#define UNIF_VERT_SMOOTH_SIZE 3
+static const GLchar *ATTR_VERT_SMOOTH[ATTR_VERT_SMOOTH_SIZE] = {A_COORD};
+static const GLchar *UNIF_VERT_SMOOTH[UNIF_VERT_SMOOTH_SIZE] = {U_TRANSLATION, U_PROJECTION, U_MODELVIEW};
+static const GLchar *SRC_VERT_SMOOTH = 
+	GLSL_PRECISION
+	"uniform vec2 "U_TRANSLATION";\n"
+	"uniform mat2 "U_PROJECTION";\n"
+	"uniform mat2 "U_MODELVIEW";\n"
+	"attribute vec2 "A_COORD";\n"
+	"varying vec2 "V_POSITION";\n"
+	"void main(void) {\n"
+		V_POSITION" = "A_COORD" + "A_COORD"*"U_PROJECTION";\n"
+		"gl_Position = vec4("U_PROJECTION"*("U_MODELVIEW"*"V_POSITION" + "U_TRANSLATION"),0.0,1.0);\n"
 	"}\n";
 
 /* Uniforms */
@@ -73,7 +89,7 @@ static const GLchar *SRC_FRAG_QUAD =
 	"varying vec2 "V_POSITION";\n"
 	"void main(void) {\n"
 		"vec2 lBounds = vec2(length("U_MODELVIEW"*vec2(1.0,0.0)),length("U_MODELVIEW"*vec2(0.0,1.0)));\n"
-		"gl_FragColor = "U_COLOR"*(clamp(0.5*min(\n"
+		"gl_FragColor = "U_COLOR"*vec4(1.0,1.0,1.0,clamp(min(\n"
 		"  lBounds.x*min(1.0 - "V_POSITION".x, 1.0 + "V_POSITION".x),\n"
 		"  lBounds.y*min(1.0 - "V_POSITION".y, 1.0 + "V_POSITION".y)\n"
 		"),-0.5,0.5) + 0.5);\n"
@@ -90,7 +106,7 @@ static const GLchar *SRC_FRAG_CIRCLE =
 		"float lLen = length("V_POSITION");\n"
 		"vec2 lNorm = "V_POSITION"/lLen;\n"
 		"float lEllipseLen = length("U_MODELVIEW"*lNorm);\n"
-		"gl_FragColor = "U_COLOR"*(clamp(0.5*(1.0 - lLen)*lEllipseLen,-0.5,0.5) + 0.5);\n"
+		"gl_FragColor = "U_COLOR"*vec4(1.0,1.0,1.0,clamp((1.0 - lLen)*lEllipseLen,-0.5,0.5) + 0.5);\n"
 	"}\n";
 
 #define U_INNER_MUL "uInnerMul"
@@ -107,8 +123,8 @@ static const GLchar *SRC_FRAG_RING =
 		"float lLen = length("V_POSITION");\n"
 		"vec2 lNorm = "V_POSITION"/lLen;\n"
 		"float lEllipseLen = length("U_MODELVIEW"*lNorm);\n"
-		"gl_FragColor = "U_COLOR"*(clamp(min(\n"
-      "0.5*(1.0 - lLen)*lEllipseLen,\n"
-      "0.5*(lLen - "U_INNER_MUL")*lEllipseLen\n"
-    "),-0.5,0.5) + 0.5);\n"
+		"gl_FragColor = "U_COLOR"*vec4(1.0,1.0,1.0,clamp(min(\n"
+      "(1.0 - lLen),\n"
+      "(lLen - "U_INNER_MUL")\n"
+    ")*lEllipseLen,-0.5,0.5) + 0.5);\n"
 	"}\n";
