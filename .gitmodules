@@ -1,3 +1,6 @@
 [submodule "libmedia"]
 	path = libmedia
 	url = https://github.com/nthend/libmedia.git
+[submodule "libgraphics"]
+	path = libgraphics
+	url = https://github.com/nthend/libgraphics.git
