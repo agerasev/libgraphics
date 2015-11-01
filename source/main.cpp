@@ -1,20 +1,34 @@
 #include <media/media.hpp>
+#include <graphics/graphics.h>
 
 class GraphicsHandler : public media::Graphics::Handler {
+private:
+	int color = 0xff000000;
+	
 public:
 	GraphicsHandler() = default;
 	virtual ~GraphicsHandler() = default;
 	
 	virtual void create() override {
 		logMessage("graphics created");
+		gInit();
 	}
 	
 	virtual void destroy() override {
 		logMessage("graphics destroyed");
+		gDispose();
 	}
 	
 	virtual void resize(int w, int h) override {
 		logMessage("graphics resized %d %d", w, h);
+		gResize(w, h);
+	}
+	
+	virtual void draw() override {
+		// logMessage("frame redrawed");
+		gClear();
+		gSetColorInt(G_ALPHA(1) & color++);
+		gFill();
 	}
 };
 
