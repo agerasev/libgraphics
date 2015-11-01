@@ -13,7 +13,7 @@
 #define G_CYAN     0xffffff00
 #define G_MAGENTA  0xffff00ff
 
-#define G_ALPHA(c) (((int)(255.0f*c)<<24)|0x00ffffff)
+#define G_ALPHA(c) (((int)(0xff*c)<<24)|0x00ffffff)
 
 #define G_BLEND_ADDITION   0x01
 #define G_BLEND_OVERLAY    0x02
