@@ -3,7 +3,7 @@
 
 class GraphicsHandler : public media::Graphics::Handler {
 private:
-	int color = 0xff000000;
+	int mx, my;
 	
 public:
 	GraphicsHandler() = default;
@@ -24,17 +24,28 @@ public:
 		gResize(w, h);
 	}
 	
-	virtual void draw() override {
-		// logMessage("frame redrawed");
+	virtual void draw(double dt) override {
+		// logMessage("frame redrawed dt = %lf", dt);
+		float s = 100.0;
+		float matrix[4] = {s,0,0,s};
+		float vector[2] = {(float) mx, (float) my};
 		gClear();
-		gSetColorInt(G_ALPHA(1) & color++);
-		gFill();
+		gTransform(matrix);
+		gTranslate(vector);
+		gSetColorInt(G_RED);
+		gDrawRing(0.5);
+	}
+	
+	void setm(int x, int y) {
+		mx = x;
+		my = y;
 	}
 };
 
 class PointerHandler : public media::Pointer::Handler {
 public:
-	PointerHandler() = default;
+	GraphicsHandler *g;
+	PointerHandler(GraphicsHandler *gh) : g(gh) {}
 	virtual ~PointerHandler() = default;
 	
 	virtual void move(int buttons, ivec2 from, ivec2 to) override {
@@ -44,6 +55,7 @@ public:
 		      from.x(), from.y(), to.x(), to.y(), buttons
 		      );
 		*/
+		g->setm(to.x(), to.y());
 	}
 	
 	virtual void up(int button, ivec2 pos, int index) override {
@@ -78,8 +90,10 @@ public:
 class AppHandler : public media::App::Handler {
 public:
 	virtual void create() override {
-		super->getGraphics()->setHandler(new GraphicsHandler);
-		super->getPointer()->setHandler(new PointerHandler);
+		GraphicsHandler *gh = new GraphicsHandler;
+		PointerHandler *ph = new PointerHandler(gh);
+		super->getGraphics()->setHandler(gh);
+		super->getPointer()->setHandler(ph);
 		logMessage("app created");
 	}
 	
