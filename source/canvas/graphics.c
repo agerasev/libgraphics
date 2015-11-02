@@ -19,17 +19,24 @@ static struct {
 	float c[4];
 } ctx;
 
+void gfx_script_loaded() {
+	eval("__libmediaForceAnimation(); __gfxInit(__libmedia_canvas);");
+}
+
 /* Initializes graphics subsystem */
 int gInit()
 {
-	eval("__gfx_ctx = __libmedia_canvas.getContext('2d');");
+	eval(
+	  "__libmediaSuppressAnimation();"
+	  "__loadScript('graphics.js', function(){Module.ccall('gfx_script_loaded',null,[],[]);});"
+	  );
 	return 0;
 }
 
 /* Safely disposes graphics subsystem */
 int gDispose()
 {
-	eval("__gfx_ctx = undefined;");
+	eval("__gfxDispose();");
 	return 0;
 }
 
@@ -42,12 +49,21 @@ void gResize(int width, int height)
 
 void gTranslate(const float vector[2])
 {
+	char str[EVAL_SIZE];
 	memcpy(ctx.tl, vector, sizeof(float)*2);
+	sprintf(str, "__gfxTranslate(%f,%f);", vector[0], vector[1]);
+	eval(str);
 }
 
 void gTransform(const float matrix[4])
 {
+	char str[EVAL_SIZE];
 	memcpy(ctx.tf, matrix, sizeof(float)*4);
+	sprintf(
+	  str, "__gfxTransform(%f,%f,%f,%f);", 
+	  matrix[0], matrix[1], matrix[2], matrix[3]
+	  );
+	eval(str);
 }
 
 void gSetColorInt(unsigned color)
@@ -65,9 +81,9 @@ void gSetColor(const float color[4])
 	char str[EVAL_SIZE];
 	memcpy(ctx.c, color, sizeof(float)*4);
 	sprintf(
-	      str, "__gfx_ctx.fillStyle = 'rgba(%d,%d,%d,%f)';", 
-	      (int) (color[0]*0xff), (int) (color[1]*0xff), (int) (color[2]*0xff), color[3]
-	    );
+	  str, "__gfx_ctx.fillStyle = 'rgba(%d,%d,%d,%f)';", 
+	  (int) (color[0]*0xff), (int) (color[1]*0xff), (int) (color[2]*0xff), color[3]
+	  );
 	eval(str);
 }
 
@@ -78,26 +94,24 @@ void gSetBlendMode(unsigned mode)
 
 void gClear()
 {
-	char str[EVAL_SIZE];
-	sprintf(str, "__gfx_ctx.clearRect(0,0,%d,%d);", ctx.w, ctx.h);
-	eval(str);
+	eval("__gfxClear();");
 }
 
 void gFill()
 {
-	char str[EVAL_SIZE];
-	sprintf(str, "__gfx_ctx.fillRect(0,0,%d,%d);", ctx.w, ctx.h);
-	eval(str);
+	eval("__gfxFill();");
 }
 
 void gDrawCircle()
 {
-	
+	eval("__gfxDrawCircle();");
 }
 
 void gDrawRing(float in)
 {
-	
+	char str[EVAL_SIZE];
+	sprintf(str, "__gfxDrawRing(%f);", in);
+	eval(str);
 }
 
 GImage *gGenImage(int width, int height, void *data)

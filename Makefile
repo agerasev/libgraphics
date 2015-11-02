@@ -83,6 +83,11 @@ $(GFX_D_OBJ_DIR)/shader.o: $(GFX_SOURCE_DIR)/gl/shader.c $(GFX_D_ALL_HEADERS)
 #  GFX_W_LIB
 #	 GFX_W_LIB_DIR
 #  GFX_W_LIB_FILE
+#  GFX_W_OBJS
+#  GFX_W_LFLAGS
+
+GFX_W_EXPORTED_FUNCTIONS=\
+	_gfx_script_loaded
 
 GFX_W_OBJ_DIR=$(W_OBJ_DIR)/graphics
 
@@ -102,10 +107,16 @@ _GFX_W_OBJS= \
 	graphics.o
 GFX_W_OBJS=$(_GFX_W_OBJS:%=$(GFX_W_OBJ_DIR)/%)
 
+GFX_W_SCRIPT_SRC=$(GFX_DIR)/resources/graphics.js
+GFX_W_SCRIPT_DST=$(W_APP_DIR)/graphics.js
+
 GFX_W_ALL_HEADERS=$(GFX_HEADERS) $(GFX_LOCAL_HEADERS)
 GFX_W_ALL_INCLUDES=$(GFX_INCLUDES)
 
-libgraphics_web: $(GFX_W_OBJ_DIR) $(GFX_W_LIB_FILE)
+libgraphics_web: $(GFX_W_OBJ_DIR) $(GFX_W_LIB_FILE) $(GFX_W_SCRIPT_DST)
+
+$(GFX_W_SCRIPT_DST): $(GFX_W_SCRIPT_SRC)
+	cp $< $@
 
 $(GFX_W_OBJ_DIR):
 	mkdir -p $@
