@@ -11,7 +11,6 @@ function __gfxDispose() {
 
 function __gfxUpdateMap() {
 	var m = __gfx_map;
-	//__gfx_ctx.resetTransform();
 	__gfx_ctx.setTransform(m[0], m[1], m[2], m[3], 0.5*__gfx_cnv.width + m[4], 0.5*__gfx_cnv.height - m[5]);
 }
 
@@ -40,8 +39,19 @@ function __gfxFill() {
 	__gfxUpdateMap();
 }
 
+function __gfxDrawQuad() {
+	__gfx_ctx.fillRect(-1, -1, 2, 2);
+}
+
 function __gfxDrawCircle() {
 	__gfx_ctx.beginPath();
-    __gfx_ctx.arc(0, 0, 1, 0, Math.PI*2, true);
-    __gfx_ctx.fill();
+	__gfx_ctx.arc(0, 0, 1, 0, Math.PI*2, true);
+	__gfx_ctx.fill();
+}
+
+function __gfxDrawRing(p) {
+	__gfx_ctx.beginPath();
+	__gfx_ctx.arc(0, 0, 1, 0, Math.PI*2, true);
+	__gfx_ctx.arc(0, 0, p, 0, Math.PI*2, false);
+	__gfx_ctx.fill();
 }

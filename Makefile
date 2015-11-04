@@ -4,6 +4,7 @@
 
 # Requires:
 #  GFX_DIR
+#  LIBLA_DIR
 #
 # Provides:
 #  GFX_HEADERS
@@ -13,8 +14,13 @@ _GFX_HEADERS= \
 	graphics.h \
 	graphics.hpp
 GFX_HEADERS=$(_GFX_HEADERS:%=$(GFX_DIR)/include/graphics/%)
+_GFX_LIBLA_HEADERS= \
+	$(LIBLA_DIR)/la/vec.hpp \
+	$(LIBLA_DIR)/la/mat.hpp
+GFX_LOCAL_HEADERS=$(_GFX_LIBLA_HEADERS)
 
 GFX_INCLUDES=$(GFX_DIR)/include
+GFX_LOCAL_INCLUDES=$(LIBLA_DIR)
 
 .phony: libgraphics_desktop libgraphics_web
 
@@ -54,8 +60,8 @@ _GFX_D_OBJS= \
 	shader.o
 GFX_D_OBJS=$(_GFX_D_OBJS:%=$(GFX_D_OBJ_DIR)/%)
 
-GFX_D_ALL_HEADERS=$(GFX_HEADERS) $(GFX_LOCAL_HEADERS)
-GFX_D_ALL_INCLUDES=$(GFX_INCLUDES)
+GFX_D_ALL_HEADERS=$(GFX_HEADERS) $(GFX_LOCAL_HEADERS) $(GFX_D_LOCAL_HEADERS)
+GFX_D_ALL_INCLUDES=$(GFX_INCLUDES) $(GFX_LOCAL_INCLUDES)
 
 libgraphics_desktop: $(GFX_D_OBJ_DIR) $(GFX_D_LIB_FILE)
 
@@ -66,10 +72,10 @@ $(GFX_D_LIB_FILE): $(GFX_D_OBJS)
 	$(AR) rcs $@ $^
 
 $(GFX_D_OBJ_DIR)/graphics.o: $(GFX_SOURCE_DIR)/gl/graphics.c $(GFX_D_ALL_HEADERS)
-	$(D_CC) -c -Wall $(GFX_D_ALL_INCLUDES:%=-I%) $< -o $@
+	$(D_CC) -c -g -Wall $(GFX_D_ALL_INCLUDES:%=-I%) $< -o $@
 
 $(GFX_D_OBJ_DIR)/shader.o: $(GFX_SOURCE_DIR)/gl/shader.c $(GFX_D_ALL_HEADERS)
-	$(D_CC) -c -Wall $(GFX_D_ALL_INCLUDES:%=-I%) $< -o $@
+	$(D_CC) -c -g -Wall $(GFX_D_ALL_INCLUDES:%=-I%) $< -o $@
 
 
 ###############
@@ -110,8 +116,8 @@ GFX_W_OBJS=$(_GFX_W_OBJS:%=$(GFX_W_OBJ_DIR)/%)
 GFX_W_SCRIPT_SRC=$(GFX_DIR)/resources/graphics.js
 GFX_W_SCRIPT_DST=$(W_APP_DIR)/graphics.js
 
-GFX_W_ALL_HEADERS=$(GFX_HEADERS) $(GFX_LOCAL_HEADERS)
-GFX_W_ALL_INCLUDES=$(GFX_INCLUDES)
+GFX_W_ALL_HEADERS=$(GFX_HEADERS) $(GFX_LOCAL_HEADERS) $(GFX_W_LOCAL_HEADERS)
+GFX_W_ALL_INCLUDES=$(GFX_INCLUDES) $(GFX_LOCAL_INCLUDES)
 
 libgraphics_web: $(GFX_W_OBJ_DIR) $(GFX_W_LIB_FILE) $(GFX_W_SCRIPT_DST)
 

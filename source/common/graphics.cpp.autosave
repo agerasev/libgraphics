@@ -1,3 +1,5 @@
+#include <graphics/graphics.hpp>
+
 #pragma once
 
 /**
@@ -7,7 +9,6 @@
 #include "graphics.h"
 
 #include <la/vec.hpp>
-#include <la/mat.hpp>
 
 namespace gfx {
 static const int BLACK   = G_BLACK;
@@ -25,7 +26,8 @@ inline int ALPHA(float c) {
 
 class Image {
 public:
-	
+	int getWidth() const;
+	int getHeight() const;
 };
 
 class Context;
@@ -61,14 +63,18 @@ class Quad : public Shape {
 public:
 	Quad() = default;
 	virtual ~Quad() = default;
-	virtual void _draw() const override;
+	virtual void _draw() const override {
+		
+	}
 };
 
 class Circle : public Shape {
 public:
 	Circle() = default;
 	virtual ~Circle() = default;
-	virtual void _draw() const override;
+	virtual void _draw() const override {
+		
+	}
 };
 
 class Ring : public Shape {
@@ -78,7 +84,9 @@ public:
 	Ring() = default;
 	Ring(float inm) : in(inm) {}
 	virtual ~Ring() = default;
-	virtual void _draw() const override;
+	virtual void _draw() const override {
+		
+	}
 };
 
 class Context {
@@ -87,34 +95,53 @@ private:
 	Handler *handler;
 	
 	bool inited = false;
-	static void callback(void *data);
+	void init() {
+		inited = true;
+		if(handler != nullptr)
+			handler->init();
+	}
+	friend void __gInitCompleted(void *handler);
 	
 public:
 	/* Initializes graphics subsystem */
-	Context(Handler *h = nullptr);
+	Context(Handler *h = nullptr) {
+		handler = h;
+		handler->super = this;
+		__gSetInitHandler(context, static_cast<void *>(this));
+		gInit(&context);
+	}
 	
 	/* Safely disposes graphics subsystem */
-	virtual ~Context();
+	virtual ~Context() {
+		gDispose(context);
+	}
 	
 	/* Performs resizing of window */
-	void resize(int w, int h);
+	void resize(int w, int h) {
+		gResize(context, w, h);
+	}
 	
 	/* Transform */
-	void translate(const float v[2]);
-	void translate(const fvec2 &v);
+	void translate(const float v[2]) {
+		gTranslate();
+	}
+
 	void transform(const float m[4]);
-	void transform(const fmat2 &m);
+	
+	/* Color */
+	void setColor(unsigned color);
+	void setColor(const float color[4]);
 	
 	/* Fill */
 	void clear();
-	void fill(const float c[4]);
-	void fill(const fvec4 &c);
-	void fill(int color);
+	void fill();
 	
 	/* Geometry */
 	void draw(const Shape *s);
 	
-	Handler *getHandler();
+	Handler *getHandler() {
+		return handler;
+	}
 };
 
 

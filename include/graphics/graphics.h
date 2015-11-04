@@ -15,9 +15,6 @@
 
 #define G_ALPHA(c) (((int)(0xff*c)<<24)|0x00ffffff)
 
-#define G_BLEND_ADDITION   0x01
-#define G_BLEND_OVERLAY    0x02
-
 typedef struct GImage
 {
 	unsigned int _id;
@@ -25,45 +22,50 @@ typedef struct GImage
 } 
 GImage;
 
+typedef struct GContext GContext;
+
 #ifdef __cplusplus
 extern "C" {
 #endif
 
+GContext *gCreateContext();
+void gDestroyContext(GContext *context);
+void gSetInitCallback(GContext *context, void (*callback)(void *), void *data);
+
 /* Initializes graphics subsystem */
-int gInit();
+int gInit(GContext *context);
 
 /* Safely disposes graphics subsystem */
-int gDispose();
+int gDispose(GContext *ctx);
 
 /* Performs resizing of window */
-void gResize(int width, int height);
+void gResize(GContext *ctx, int width, int height);
 
 /* Transform */
-void gTranslate(const float vector[2]);
-void gTransform(const float matrix[4]);
+void gTranslate(GContext *ctx, const float vector[2]);
+void gTransform(GContext *ctx, const float matrix[4]);
 
 /* Color */
-void gSetColorInt(unsigned color);
-void gSetColor(const float color[4]);
-void gSetBlendMode(unsigned mode);
+void gSetColorInt(GContext *ctx, unsigned color);
+void gSetColor(GContext *ctx, const float color[4]);
 
 /* Fill */
-void gClear();
-void gFill();
+void gClear(GContext *ctx);
+void gFill(GContext *ctx);
 
 /* Geometry */
-void gDrawQuad();
-void gDrawCircle();
-void gDrawRing(float in);
+void gDrawQuad(GContext *ctx);
+void gDrawCircle(GContext *ctx);
+void gDrawRing(GContext *ctx, float in);
 /*
-void gDrawCircleSegment(float angle);
-void gDrawRingSegment(float in, float angle);
+void gDrawCircleSegment(GContext *ctx, float angle);
+void gDrawRingSegment(GContext *ctx, float in, float angle);
 */
 
 /* Images */
-GImage *gGenImage(int width, int height, void *data);
-void gFreeImage(GImage *image);
-void gDrawImage(GImage *image);
+GImage *gGenImage(GContext *ctx, int width, int height, void *data);
+void gFreeImage(GContext *ctx, GImage *image);
+void gDrawImage(GContext *ctx, GImage *image);
 
 #ifdef __cplusplus
 }
