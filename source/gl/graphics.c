@@ -411,7 +411,7 @@ void gDrawRing(GContext *context, float in)
 #endif
 }
 
-GImage *gGenImage(GContext *context, int width, int height, void *data)
+GImage *gGenImage(int width, int height, void *data)
 {
 	GImage *image = (GImage*)malloc(sizeof(GImage));
 	
@@ -439,7 +439,7 @@ GImage *gGenImage(GContext *context, int width, int height, void *data)
 	return image;
 }
 
-void gFreeImage(GContext *context, GImage *image)
+void gFreeImage(GImage *image)
 {
 	glDeleteTextures(1,&image->_id);
 	free(image);

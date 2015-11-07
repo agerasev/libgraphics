@@ -18,8 +18,8 @@ struct GContext {
 	float tl[2];
 	float c[4];
 	
-	static void (*callback)(void *) = NULL;
-	static void *callback_data = NULL;
+	void (*callback)(void *);
+	void *callback_data;
 };
 
 static GContext *global_context = NULL;
@@ -104,7 +104,7 @@ void gSetColor(GContext *ctx, const float color[4])
 	char str[EVAL_SIZE];
 	memcpy(ctx->c, color, sizeof(float)*4);
 	sprintf(
-	  str, "__gfx_ctx->fillStyle = 'rgba(%d,%d,%d,%f)';", 
+	  str, "__gfx_ctx.fillStyle = 'rgba(%d,%d,%d,%f)';", 
 	  (int) (color[0]*0xff), (int) (color[1]*0xff), (int) (color[2]*0xff), color[3]
 	  );
 	eval(str);
@@ -137,12 +137,12 @@ void gDrawRing(GContext *ctx, float in)
 	eval(str);
 }
 
-GImage *gGenImage(GContext *ctx, int width, int height, void *data)
+GImage *gGenImage(int width, int height, void *data)
 {
 	return NULL;
 }
 
-void gFreeImage(GContext *ctx, GImage *image)
+void gFreeImage(GImage *image)
 {
 	
 }

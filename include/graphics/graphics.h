@@ -63,8 +63,8 @@ void gDrawRingSegment(GContext *ctx, float in, float angle);
 */
 
 /* Images */
-GImage *gGenImage(GContext *ctx, int width, int height, void *data);
-void gFreeImage(GContext *ctx, GImage *image);
+GImage *gGenImage(int width, int height, void *data);
+void gFreeImage(GImage *image);
 void gDrawImage(GContext *ctx, GImage *image);
 
 #ifdef __cplusplus
